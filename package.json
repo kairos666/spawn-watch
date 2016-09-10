@@ -1,0 +1,35 @@
+{
+  "name": "spawn-watch",
+  "version": "0.0.1",
+  "description": "Simple node spawn process helper for creation, deletion and monitoring",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test --require test/chai.js --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kairos666/spawn-watch.git"
+  },
+  "keywords": [
+    "node",
+    "spawn",
+    "monitor",
+    "wrapper"
+  ],
+  "author": "David Maggi <musashi.miyamoto81@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kairos666/spawn-watch/issues"
+  },
+  "homepage": "https://github.com/kairos666/spawn-watch#readme",
+  "dependencies": {
+    "chalk": "^1.1.3",
+    "rx": "^4.1.0",
+    "tree-kill": "^1.1.0",
+    "type-of-is": "^3.4.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.0.2"
+  }
+}
