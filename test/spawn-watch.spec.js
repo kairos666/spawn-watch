@@ -5,6 +5,8 @@ const testConfigs            = require('./assets/test-configs');
 const status                 = require('../lib/constants').status;
 const Rx                     = require('rx');
 const kill                   = require('tree-kill');
+const chalk                  = require('chalk');
+const hasAnsi                = require('has-ansi');
 
 describe('spawn-watch API methods', function() {
     var spawnWatch;
@@ -206,6 +208,11 @@ describe('spawn-watch API methods', function() {
         it('INPUT an instance that isn\'t started yet doesn\'t work', function(){
             expect(spawnWatch.input('TEST input')).to.be.equal(false);
         });
+        it('ipcINPUT doesn\'t work when an instance has no ipc channel', function(){
+            //no ipc channel declared in this instance
+            spawnWatch.start(testConfigs.durationConfig);
+            expect(spawnWatch.ipcInput('TEST input')).to.be.equal(false);
+        });
     });
 });
 describe('spawn-watch API getter methods', function() {
@@ -331,7 +338,92 @@ describe('spawn-watch API getter methods', function() {
             spawnWatch.start(testConfigs.errorGeneratingCommandConfig);
         });
     });
+    describe(`spawn-watch ipcStream`, function() {
+        it('getter method ipcStream provide an event stream (always accessible but will only emit if IPC enabled)', function(){
+            expect(spawnWatch.ipcStream).to.exist.and.to.be.an.instanceof(Rx.Observable);
+        });
+    });
 });
+describe('spawn-watch ipc channel testing', function() {
+    var spawnWatch;
+
+    beforeEach(function() {
+        // runs before each test in this block
+        let ipcOption = { ipc:true }
+        spawnWatch = new SpawnWatch(ipcOption);
+    });
+
+    afterEach(function(done) {
+        afterTestEventualKillProcess(spawnWatch, done);
+    });
+    
+    it('get JSON output from parent to child', function(done){
+        let testJson = { test:'ipc', with:'JSON object' };
+        spawnWatch.outEventStream.subscribe(log => {
+            //test if received log contains stringified json
+            expect(log.indexOf(JSON.stringify(testJson))).to.not.equal(-1);
+            done();
+        });
+        spawnWatch.start(testConfigs.ipcCommandConfig);
+        expect(spawnWatch.ipcInput(testJson)).to.equal(true);
+    });
+    it('get JSON output from child to parent', function(done){
+        let testJson = { test:'ipc', with:'JSON object' };
+        spawnWatch.ipcStream.subscribe(ipcMsg => {
+            //test if received log contains stringified json
+            expect(ipcMsg).to.deep.equal(testJson);
+            done();
+        });
+        spawnWatch.start(testConfigs.ipcCommandConfig);
+        expect(spawnWatch.ipcInput(testJson)).to.equal(true);
+    });
+})
+describe('spawn-watch color encoding testing', function() {
+    var spawnWatch;
+
+    beforeEach(function() {
+        // runs before each test in this block
+        let encodingOption = { ipc:true };
+        spawnWatch = new SpawnWatch(encodingOption);
+    });
+
+    afterEach(function(done) {
+        afterTestEventualKillProcess(spawnWatch, done);
+    });
+
+    it('stdin | stdout | stderr are enabling colors', function(done){
+        let results = {
+            stdin: undefined,
+            stdout: undefined,
+            stderr: undefined
+        };
+        let checkTestEnd = function(results) {
+            if(results.stdin && results.stdout && results.stderr) {
+                expect(hasAnsi(results.stdin)).to.equal(true);
+                expect(hasAnsi(results.stdout)).to.equal(true);
+                expect(hasAnsi(results.stderr)).to.equal(true);
+                done();
+            }
+        };
+        spawnWatch.outEventStream.subscribe(log => {
+            //console.log(log);
+            results.stdout = log;
+            checkTestEnd(results);
+        });
+        spawnWatch.errorStream.subscribe(err => {
+            //console.log(err);
+            results.stderr = err;
+            checkTestEnd(results);
+        })
+        spawnWatch.ipcStream.subscribe(msg => {
+            //console.log(msg);
+            results.stdin = msg;
+            checkTestEnd(results);
+        })
+        spawnWatch.start(testConfigs.ansiCommandConfig);
+        spawnWatch.input(chalk.green('TEST STDIN'));
+    });
+})
 
 let afterTestEventualKillProcess = function(spawnWatch, done) {
     //kill process

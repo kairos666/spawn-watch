@@ -34,11 +34,25 @@ let inputCommandConfig = {
     options: {}
 };
 
+let ipcCommandConfig = {
+    command: 'node',
+    args: ['test/assets/ipc-process.js'],
+    options: {}
+};
+
+let ansiCommandConfig = {
+    command: 'node',
+    args: ['test/assets/ansi-colors-process.js'],
+    options: {}
+};
+
 module.exports = {
     fastEndingConfig: fastEndingConfig,
     invalidConfig: invalidConfig,
     badCommandConfig: badCommandConfig,
     durationConfig: durationConfig,
     errorGeneratingCommandConfig: errorGeneratingCommandConfig,
-    inputCommandConfig: inputCommandConfig
+    inputCommandConfig: inputCommandConfig,
+    ipcCommandConfig: ipcCommandConfig,
+    ansiCommandConfig: ansiCommandConfig
 }
