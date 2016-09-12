@@ -11,11 +11,21 @@ const Type                  = require('type-of-is');
 const Rx                    = require('rx');
 
 class SpawnWatch {
-    constructor(){
+    constructor(options){
         this._status            = new Rx.BehaviorSubject(status.stopped);
         this._childProcess      = null;
         this._currentConfig     = null;
         this._evtStream         = new Rx.Subject();
+
+        //register options (default is no IPC channel, utf-8 encoding for inputs)
+        this._options           = Object.assign({
+            ipc:false,
+            encodings:{
+                stdin:'utf-8',
+                stdout:'utf-8',
+                stderr:'utf-8'
+            }
+        }, options);
 
         //status update from process events
         this.processEventStream.subscribe(newStatus => { this._status.onNext(newStatus); });
@@ -35,7 +45,7 @@ class SpawnWatch {
             let evtA = new processEvt(customEvts.process, status.pendingStart);
             this._evtStream.onNext(evtA);
             this._currentConfig = config;
-            this._childProcess = starter(config, this._evtStream);
+            this._childProcess = starter(config, this._evtStream, this._options);
 
             //fire started evt
             let evtB = new processEvt(customEvts.process, status.started);
@@ -109,6 +119,16 @@ class SpawnWatch {
         return true;
     }
 
+    //input via ipc
+    ipcInput(data) {
+        if(this._childProcess && this._childProcess.send) {
+            //only works when there is a childprocess with ipc
+            this._childProcess.send(data);
+            return true;
+        }
+        return false;
+    }
+
     get processStatus() { return this._status.value; }
     get currentConfig() { return Object.assign({}, this._currentConfig); }
     get processEventStream() { 
@@ -128,6 +148,14 @@ class SpawnWatch {
             .filter(evt => { return (evt.type === customEvts.childError) })
             .map(evt => { return evt.payload });
         return errorStream; 
+    }
+
+    //only emits for ipc enabled processes
+    get ipcStream() {
+        let ipcStream = this._evtStream.asObservable()
+            .filter(evt => { return (evt.type === customEvts.ipcData) })
+            .map(evt => { return evt.payload });
+        return ipcStream;
     }
 }
 
