@@ -40,9 +40,31 @@ let ipcCommandConfig = {
     options: {}
 };
 
+let ipcCommandAlternateConfig = {
+    command: 'node',
+    args: ['test/assets/ipc-process.js'],
+    options: {
+        stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+    }
+};
+
+let ipcCommandAlternateBisConfig = {
+    command: 'node',
+    args: ['test/assets/ipc-process.js'],
+    options: {
+        stdio: ['pipe', null, null]
+    }
+};
+
 let ansiCommandConfig = {
     command: 'node',
     args: ['test/assets/ansi-colors-process.js'],
+    options: {}
+};
+
+let asciiCommandConfig = {
+    command: 'node',
+    args: ['test/assets/ascii-process.js'],
     options: {}
 };
 
@@ -54,5 +76,8 @@ module.exports = {
     errorGeneratingCommandConfig: errorGeneratingCommandConfig,
     inputCommandConfig: inputCommandConfig,
     ipcCommandConfig: ipcCommandConfig,
-    ansiCommandConfig: ansiCommandConfig
+    ipcCommandAlternateConfig: ipcCommandAlternateConfig,
+    ipcCommandAlternateBisConfig: ipcCommandAlternateBisConfig,
+    ansiCommandConfig: ansiCommandConfig,
+    asciiCommandConfig: asciiCommandConfig
 }

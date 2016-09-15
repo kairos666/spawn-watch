@@ -344,7 +344,7 @@ describe('spawn-watch API getter methods', function() {
         });
     });
 });
-describe('spawn-watch ipc channel testing', function() {
+describe('spawn-watch ipc channel testing (enabled via spawnwatch instance config)', function() {
     var spawnWatch;
 
     beforeEach(function() {
@@ -378,7 +378,74 @@ describe('spawn-watch ipc channel testing', function() {
         expect(spawnWatch.ipcInput(testJson)).to.equal(true);
     });
 })
-describe('spawn-watch color encoding testing', function() {
+describe('spawn-watch ipc channel testing (enabled by extending stdio config)', function() {
+    var spawnWatch;
+
+    beforeEach(function() {
+        // runs before each test in this block
+        let ipcOption = { ipc:true }
+        spawnWatch = new SpawnWatch(ipcOption);
+    });
+
+    afterEach(function(done) {
+        afterTestEventualKillProcess(spawnWatch, done);
+    });
+    
+    it('get JSON output from parent to child', function(done){
+        let testJson = { test:'ipc', with:'JSON object' };
+        spawnWatch.outEventStream.subscribe(log => {
+            //test if received log contains stringified json
+            expect(log.indexOf(JSON.stringify(testJson))).to.not.equal(-1);
+            done();
+        });
+        spawnWatch.start(testConfigs.ipcCommandAlternateBisConfig);
+        expect(spawnWatch.ipcInput(testJson)).to.equal(true);
+    });
+    it('get JSON output from child to parent', function(done){
+        let testJson = { test:'ipc', with:'JSON object' };
+        spawnWatch.ipcStream.subscribe(ipcMsg => {
+            //test if received log contains stringified json
+            expect(ipcMsg).to.deep.equal(testJson);
+            done();
+        });
+        spawnWatch.start(testConfigs.ipcCommandAlternateBisConfig);
+        expect(spawnWatch.ipcInput(testJson)).to.equal(true);
+    });
+})
+describe('spawn-watch ipc channel testing (enabled via process config)', function() {
+    var spawnWatch;
+
+    beforeEach(function() {
+        // runs before each test in this block
+        spawnWatch = new SpawnWatch();
+    });
+
+    afterEach(function(done) {
+        afterTestEventualKillProcess(spawnWatch, done);
+    });
+    
+    it('get JSON output from parent to child', function(done){
+        let testJson = { test:'ipc', with:'JSON object' };
+        spawnWatch.outEventStream.subscribe(log => {
+            //test if received log contains stringified json
+            expect(log.indexOf(JSON.stringify(testJson))).to.not.equal(-1);
+            done();
+        });
+        spawnWatch.start(testConfigs.ipcCommandAlternateConfig);
+        expect(spawnWatch.ipcInput(testJson)).to.equal(true);
+    });
+    it('get JSON output from child to parent', function(done){
+        let testJson = { test:'ipc', with:'JSON object' };
+        spawnWatch.ipcStream.subscribe(ipcMsg => {
+            //test if received log contains stringified json
+            expect(ipcMsg).to.deep.equal(testJson);
+            done();
+        });
+        spawnWatch.start(testConfigs.ipcCommandAlternateConfig);
+        expect(spawnWatch.ipcInput(testJson)).to.equal(true);
+    });
+})
+describe('spawn-watch ansi color encoding testing', function() {
     var spawnWatch;
 
     beforeEach(function() {
@@ -422,6 +489,51 @@ describe('spawn-watch color encoding testing', function() {
         })
         spawnWatch.start(testConfigs.ansiCommandConfig);
         spawnWatch.input(chalk.green('TEST STDIN'));
+    });
+})
+describe('spawn-watch stream encoding testing (ascii)', function() {
+    var spawnWatch;
+
+    beforeEach(function() {
+        // runs before each test in this block
+        let encodingOption = { encodings:{ stdin:'ascii', stdout:'ascii', stderr:'ascii' } };
+        spawnWatch = new SpawnWatch(encodingOption);
+    });
+
+    afterEach(function(done) {
+        afterTestEventualKillProcess(spawnWatch, done);
+    });
+
+    it('stdin | stdout | stderr are ascii encoded', function(done){
+        let results = {
+            stdin: undefined,
+            stdout: undefined,
+            stderr: undefined
+        };
+        let checkTestEnd = function(results) {
+            if(results.stdin && results.stdout && results.stderr) {
+                expect(results.stdin.indexOf('éàù@#')).to.equal(-1);
+                expect(results.stdout.indexOf('éàù@#')).to.equal(-1);
+                expect(results.stderr.indexOf('éàù@#')).to.equal(-1);
+                done();
+            }
+        };
+        spawnWatch.outEventStream.subscribe(log => {
+            //console.log(log);
+            if(log.indexOf('STDIN') > -1) {
+                results.stdin = log;
+            } else if(log.indexOf('STDOUT') > -1) {
+                results.stdout = log;
+            }
+            checkTestEnd(results);
+        });
+        spawnWatch.errorStream.subscribe(err => {
+            //console.log(err);
+            results.stderr = err;
+            checkTestEnd(results);
+        })
+        spawnWatch.start(testConfigs.asciiCommandConfig);
+        spawnWatch.input(chalk.green('TEST ASCII STDIN éàù@#'));
     });
 })
 
