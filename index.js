@@ -121,7 +121,7 @@ class SpawnWatch {
 
     //input via ipc
     ipcInput(data) {
-        if(this._childProcess && this._childProcess.send) {
+        if(data && this._childProcess && this._childProcess.send) {
             //only works when there is a childprocess with ipc
             this._childProcess.send(data);
             return true;
