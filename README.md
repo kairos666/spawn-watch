@@ -8,7 +8,7 @@ npm install spawn-watch
 
 ## Usage
 ```javascript
-const SpawnWatch = require('../index');
+const SpawnWatch = require('spawn-watch');
 
 initOptions = {
     ipc:true,
@@ -26,7 +26,7 @@ config = {
 };
 
 //init (options are not required)
-spawnWatch = new SpawnWatch(initOptions);
+let spawnWatch = new SpawnWatch(initOptions);
 
 //subscribe to error observable
 spawnWatch.errorStream.subscribe(err => {

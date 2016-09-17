@@ -1,6 +1,6 @@
 {
   "name": "spawn-watch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple node spawn process helper for creation, deletion and monitoring",
   "main": "index.js",
   "scripts": {
