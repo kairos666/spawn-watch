@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/spawn-watch.svg)](https://badge.fury.io/js/spawn-watch)
+
 # spawn-watch
 Simple spawn process helper for creation &amp; monitoring
 
