@@ -78,9 +78,9 @@ class SpawnWatch {
                     //restart enabled with new config
                     let restartSubscription = this.processEventStream
                         .filter(processStatus => { return processStatus === status.stopped })
+                        .first()
                         .subscribe(processStatus => {
                             this.start(config);
-                            if(restartSubscription.unsubscribe) restartSubscription.unsubscribe();
                         });
                     this.stop();
                     return true;
@@ -93,9 +93,9 @@ class SpawnWatch {
                 let storeConfig = this.currentConfig;
                 let restartSubscription = this.processEventStream
                     .filter(processStatus => { return processStatus === status.stopped })
+                    .first()
                     .subscribe(processStatus => {
                         this.start(storeConfig);
-                        if(restartSubscription.unsubscribe) restartSubscription.unsubscribe();
                     });
                 this.stop();
                 return true;

@@ -104,7 +104,7 @@ describe('spawn-watch API methods', function() {
     });
     describe(`Stress tests when chaining rapidly process methods`, function() {
         it('START | RESTART chained to stress test --> end up started', function(done){
-            spawnWatch.start(testConfigs.fastEndingConfig);
+            spawnWatch.start(testConfigs.durationConfig);
             spawnWatch.restart();
             setTimeout(function(){
                 expect(spawnWatch.processStatus).to.be.equal(status.started);
@@ -147,7 +147,7 @@ describe('spawn-watch API methods', function() {
             }, 750);
         });
         it('START | RESTART (same config) | STOP chained to stress test --> end up restarted (last stop doesn\'t count)', function(done){
-            spawnWatch.start(testConfigs.fastEndingConfig);
+            spawnWatch.start(testConfigs.durationConfig);
             spawnWatch.restart();
             expect(spawnWatch.stop()).to.be.equal(false);
             setTimeout(function(){
@@ -269,6 +269,43 @@ describe('spawn-watch API getter methods', function() {
                 if(iteration.done) {
                     expect(spawnWatch._childProcess).to.not.exist;
                     expect(spawnWatch._currentConfig).to.not.exist;
+                    done();
+                }
+            });
+            spawnWatch.start(testConfigs.durationConfig);
+        });
+        it('an instance that get restarted has status pattern [started -> pending stop -> stopped -> pending start -> started]', function(done){
+            let hasRestarted = false;
+            let slightlyDiffConfig = Object.assign({}, testConfigs.durationConfig);
+            slightlyDiffConfig.options = { fakeOptions: true };
+            let statusGenerator = function * () {
+                //setup
+                yield status.stopped;
+                yield status.pendingStart;
+                //test
+                yield status.started;
+                yield status.pendingStop;
+                yield status.stopped;
+                yield status.pendingStart;
+                return status.started;
+            }
+            let statusSequence = statusGenerator();
+            spawnWatch._status.subscribe(currentStatus => {
+                let iteration = statusSequence.next();
+                expect(spawnWatch.processStatus).to.be.equal(iteration.value);
+                if(iteration.value === status.started) {
+                    expect(spawnWatch._childProcess).to.exist;
+                    expect(spawnWatch._currentConfig).to.exist;
+                    if(!hasRestarted) {
+                        //restart with slightly modified config
+                        spawnWatch.restart(slightlyDiffConfig);
+                        hasRestarted = true;
+                    }
+                }
+                if(iteration.done) {
+                    expect(spawnWatch._childProcess).to.exist;
+                    expect(spawnWatch._currentConfig).to.exist;
+                    expect(spawnWatch._currentConfig).to.equal(slightlyDiffConfig);
                     done();
                 }
             });
